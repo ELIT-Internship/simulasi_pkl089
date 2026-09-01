@@ -113,7 +113,7 @@ $role = $_SESSION['role'] ?? 'user';
 
             <a href="javascript:void(0);">
                 <span>Transaksi</span>
-                <span>▼</span>
+                <span></span>
             </a>
 
             <div class="submenu">
