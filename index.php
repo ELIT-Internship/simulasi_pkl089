@@ -7,7 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST["username"] ?? "");
     $password = trim($_POST["password"] ?? "");
 
-    // Contoh validasi sederhana (silakan ganti dengan cek ke database)
+    // Contoh validasi sederhana ()
     if ($username === "admin" && $password === "admin123") {
         $_SESSION["username"] = $username;
         // header("Location: dashboard.php");
