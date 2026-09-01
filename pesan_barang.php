@@ -9,6 +9,20 @@ if (!isset($_SESSION['user'])) {
     exit();
 }
 
+
+// ==============================
+// AMBIL DATA BARANG
+// ==============================
+
+$barang = mysqli_query(
+    $koneksi,
+    "SELECT id_barang, nama_barang, harga
+     FROM barang
+     WHERE nama_barang IN ('Laptop', 'Mouse', 'Keyboard')
+     ORDER BY id_barang ASC"
+);
+
+
 // ==============================
 // SIMPAN PESANAN
 // ==============================
@@ -16,67 +30,93 @@ if (!isset($_SESSION['user'])) {
 if (isset($_POST['pesan'])) {
 
     $nama = $_SESSION['user'];
-    $jenis_barang = $_POST['jenis_barang'];
+    $id_barang = (int) $_POST['id_barang'];
     $kuantiti = (int) $_POST['kuantiti'];
-    $total_harga = (int) $_POST['total_harga'];
     $tanggal = date('Y-m-d');
 
-    // Karena tabel kamu masih memiliki kolom produk dan jumlah,
-    // kita isi juga dengan data yang sama.
-    $produk = $jenis_barang;
-    $jumlah = $kuantiti;
-
-    $status = "Diproses";
-    $status_pembayaran = "Belum Lunas";
-
-
-    $sql = "INSERT INTO pesanan
-            (
-                nama_pelanggan,
-                jenis_barang,
-                kuantiti,
-                produk,
-                jumlah,
-                total_harga,
-                status,
-                status_pembayaran,
-                tanggal
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-
-    $stmt = mysqli_prepare($koneksi, $sql);
-
-    if (!$stmt) {
-        die("Prepare gagal: " . mysqli_error($koneksi));
-    }
-
-
-    mysqli_stmt_bind_param(
-        $stmt,
-        "ssisisiss",
-        $nama,
-        $jenis_barang,
-        $kuantiti,
-        $produk,
-        $jumlah,
-        $total_harga,
-        $status,
-        $status_pembayaran,
-        $tanggal
+    // Ambil harga berdasarkan barang yang dipilih
+    $query_barang = mysqli_prepare(
+        $koneksi,
+        "SELECT nama_barang, harga
+         FROM barang
+         WHERE id_barang = ?
+         AND nama_barang IN ('Laptop', 'Mouse', 'Keyboard')"
     );
 
+    mysqli_stmt_bind_param(
+        $query_barang,
+        "i",
+        $id_barang
+    );
 
-    if (mysqli_stmt_execute($stmt)) {
+    mysqli_stmt_execute($query_barang);
 
-        // Setelah berhasil, masuk ke Transaksi Saya
-        header("Location: transaksi_saya.php");
-        exit();
+    $hasil_barang = mysqli_stmt_get_result($query_barang);
+
+    if (mysqli_num_rows($hasil_barang) === 0) {
+
+        $error = "Barang tidak ditemukan.";
 
     } else {
 
-        $error = "Pesanan gagal disimpan: "
-               . mysqli_error($koneksi);
+        $data_barang = mysqli_fetch_assoc($hasil_barang);
+
+        $jenis_barang = $data_barang['nama_barang'];
+        $harga = (int) $data_barang['harga'];
+
+        // Hitung total otomatis
+        $total_harga = $harga * $kuantiti;
+
+        $produk = $jenis_barang;
+        $jumlah = $kuantiti;
+
+        $status = "Diproses";
+        $status_pembayaran = "Belum Lunas";
+
+
+        // Simpan ke tabel pesanan
+        $sql = "INSERT INTO pesanan
+                (
+                    nama_pelanggan,
+                    jenis_barang,
+                    kuantiti,
+                    produk,
+                    jumlah,
+                    total_harga,
+                    status,
+                    status_pembayaran,
+                    tanggal
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt = mysqli_prepare($koneksi, $sql);
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            "ssisisiss",
+            $nama,
+            $jenis_barang,
+            $kuantiti,
+            $produk,
+            $jumlah,
+            $total_harga,
+            $status,
+            $status_pembayaran,
+            $tanggal
+        );
+
+
+        if (mysqli_stmt_execute($stmt)) {
+
+            header("Location: transaksi_saya.php");
+            exit();
+
+        } else {
+
+            $error = "Pesanan gagal disimpan: "
+                   . mysqli_error($koneksi);
+
+        }
 
     }
 
@@ -95,13 +135,11 @@ if (isset($_POST['pesan'])) {
 
     <title>Pesan Barang</title>
 
-
     <style>
 
         * {
             box-sizing: border-box;
         }
-
 
         body {
             margin: 0;
@@ -109,23 +147,15 @@ if (isset($_POST['pesan'])) {
             background: #f5f5f5;
         }
 
-
         .wrapper {
             display: flex;
             min-height: 100vh;
         }
 
-
         .content {
             flex: 1;
             padding: 30px;
         }
-
-
-        .content h1 {
-            margin-top: 0;
-        }
-
 
         .card {
             background: white;
@@ -135,11 +165,9 @@ if (isset($_POST['pesan'])) {
             box-shadow: 0 2px 5px rgba(0,0,0,.08);
         }
 
-
         .form-group {
             margin-bottom: 18px;
         }
-
 
         label {
             display: block;
@@ -147,7 +175,7 @@ if (isset($_POST['pesan'])) {
             font-weight: bold;
         }
 
-
+        select,
         input {
             width: 100%;
             padding: 11px;
@@ -155,6 +183,9 @@ if (isset($_POST['pesan'])) {
             border-radius: 5px;
         }
 
+        input[readonly] {
+            background: #eee;
+        }
 
         button {
             background: #222;
@@ -165,11 +196,9 @@ if (isset($_POST['pesan'])) {
             cursor: pointer;
         }
 
-
         button:hover {
             background: #444;
         }
-
 
         .error {
             background: #f8d7da;
@@ -183,33 +212,22 @@ if (isset($_POST['pesan'])) {
 
 </head>
 
-
 <body>
-
 
 <div class="wrapper">
 
-
-    <!-- SIDEBAR -->
-
     <?php include 'sidebar.php'; ?>
-
-
-    <!-- CONTENT -->
 
     <div class="content">
 
-
         <h1>Pesan Barang</h1>
 
-
         <p>
-            Silakan isi barang yang ingin dipesan.
+            Silakan pilih barang dan jumlah yang ingin dipesan.
         </p>
 
 
         <div class="card">
-
 
             <?php if (isset($error)): ?>
 
@@ -223,20 +241,36 @@ if (isset($_POST['pesan'])) {
             <form method="POST">
 
 
-                <!-- JENIS BARANG -->
+                <!-- BARANG -->
 
                 <div class="form-group">
 
-                    <label>
-                        Jenis Barang
-                    </label>
+                    <label>Jenis Barang</label>
 
-                    <input
-                        type="text"
-                        name="jenis_barang"
-                        placeholder="Contoh: Laptop"
+                    <select
+                        name="id_barang"
+                        id="id_barang"
+                        onchange="hitungTotal()"
                         required
                     >
+
+                        <option value="">
+                            -- Pilih Barang --
+                        </option>
+
+                        <?php while ($row = mysqli_fetch_assoc($barang)): ?>
+
+                            <option
+                                value="<?= $row['id_barang']; ?>"
+                                data-harga="<?= $row['harga']; ?>"
+                            >
+                                <?= htmlspecialchars($row['nama_barang']); ?>
+                                - Rp <?= number_format($row['harga'], 0, ',', '.'); ?>
+                            </option>
+
+                        <?php endwhile; ?>
+
+                    </select>
 
                 </div>
 
@@ -245,15 +279,16 @@ if (isset($_POST['pesan'])) {
 
                 <div class="form-group">
 
-                    <label>
-                        Kuantiti
-                    </label>
+                    <label>Kuantiti</label>
 
                     <input
                         type="number"
                         name="kuantiti"
+                        id="kuantiti"
                         min="1"
-                        placeholder="Jumlah barang"
+                        value="1"
+                        onchange="hitungTotal()"
+                        oninput="hitungTotal()"
                         required
                     >
 
@@ -264,16 +299,13 @@ if (isset($_POST['pesan'])) {
 
                 <div class="form-group">
 
-                    <label>
-                        Total Harga
-                    </label>
+                    <label>Total Harga</label>
 
                     <input
-                        type=""
-                        name="total_harga"
-                        min="0"
-                        placeholder="Contoh: 5000000"
-                        required
+                        type="text"
+                        id="total_tampilan"
+                        value="Rp 0"
+                        readonly
                     >
 
                 </div>
@@ -286,18 +318,51 @@ if (isset($_POST['pesan'])) {
                     Pesan Barang
                 </button>
 
-
             </form>
-
 
         </div>
 
-
     </div>
-
 
 </div>
 
+
+<script>
+
+function hitungTotal() {
+
+    const barang =
+        document.getElementById("id_barang");
+
+    const jumlah =
+        document.getElementById("kuantiti");
+
+    const total =
+        document.getElementById("total_tampilan");
+
+
+    const option =
+        barang.options[barang.selectedIndex];
+
+
+    const harga =
+        parseInt(option.dataset.harga || 0);
+
+
+    const kuantiti =
+        parseInt(jumlah.value || 0);
+
+
+    const hasil =
+        harga * kuantiti;
+
+
+    total.value =
+        "Rp " + hasil.toLocaleString("id-ID");
+
+}
+
+</script>
 
 </body>
 
