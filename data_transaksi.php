@@ -197,6 +197,18 @@ tr:hover {
     border-radius: 4px;
     font-size: 13px;
 }
+.btn-cetak {
+    background: #0d6efd;
+    color: white;
+    padding: 7px 10px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.btn-cetak:hover {
+    background: #0b5ed7;
+}
 
 .btn-hapus {
     background: #dc3545;
@@ -260,10 +272,7 @@ tr:hover {
 
 
             <a
-                href="transaksi_baru.php"
-                class="btn-tambah"
-            >
-                + Transaksi Baru
+               
             </a>
 
 
@@ -383,6 +392,14 @@ tr:hover {
                             >
                                 Edit
                             </a>
+                             <a
+                              
+        href="cetak_struk.php?id=<?= $transaksi['id']; ?>"
+        class="btn-cetak"
+        target="_blank"
+    >
+        Cetak Struk
+    </a>
 
                             <a
                                 href="data_transaksi.php?hapus=<?= $transaksi['id']; ?>"
