@@ -1,5 +1,6 @@
 <?php
 session_start();
+require 'koneksi.php';
 
 // Pastikan sudah login
 if (!isset($_SESSION['user'])) {
@@ -9,28 +10,125 @@ if (!isset($_SESSION['user'])) {
 
 $role = $_SESSION['role'] ?? 'user';
 
+$nama_user = $_SESSION['user'];
+
 // ==============================
-// DATA KONSUMEN (contoh)
-// Nantinya bisa diganti dengan data dari database
+// AMBIL DATA USER DARI DATABASE
 // ==============================
+
+$query = mysqli_query(
+    $koneksi,
+    "SELECT * FROM users WHERE nama = '$nama_user'"
+);
+
+$user = mysqli_fetch_assoc($query);
+
+if (!$user) {
+    die("Data user tidak ditemukan.");
+}
+
+
+// ==============================
+// PROSES EDIT PROFIL
+// ==============================
+
+if (isset($_POST['simpan_profil'])) {
+
+    $nama = mysqli_real_escape_string(
+        $koneksi,
+        $_POST['nama']
+    );
+
+    $email = mysqli_real_escape_string(
+        $koneksi,
+        $_POST['email']
+    );
+
+    // Jika password diisi
+    if (!empty($_POST['password'])) {
+
+        $password = password_hash(
+            $_POST['password'],
+            PASSWORD_DEFAULT
+        );
+
+        $update = mysqli_query(
+            $koneksi,
+            "UPDATE users SET
+                nama = '$nama',
+                email = '$email',
+                password = '$password'
+             WHERE id = '{$user['id']}'"
+        );
+
+    } else {
+
+        $update = mysqli_query(
+            $koneksi,
+            "UPDATE users SET
+                nama = '$nama',
+                email = '$email'
+             WHERE id = '{$user['id']}'"
+        );
+    }
+
+    if ($update) {
+
+        $_SESSION['user'] = $nama;
+
+        echo "<script>
+                alert('Profil berhasil diubah!');
+                window.location='profile.php';
+              </script>";
+
+        exit();
+
+    } else {
+
+        echo "<script>
+                alert('Profil gagal diubah!');
+              </script>";
+    }
+}
+
+
+// ==============================
+// DATA PROFIL
+// ==============================
+
 $konsumen = [
-    "foto"        => "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-    "nama"        => "rifky",
-    "username"    => "@rifky.",
-    "email"       => "rifky.@email.com",
-    "telepon"     => "0812-3456-7890",
-    "alamat"      => "Jl. Merdeka No. 12, tokyo, jepang",
-    "tanggal_gabung" => "12 Januari 2023",
-    "total_pesanan"  => 24,
-    "total_belanja"  => 3250000,
-    "poin_reward"    => 850,
-    "status_member"  => "Gold Member"
+    "foto" => "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80",
+
+    "nama" => $user['nama'],
+
+    "username" => "@" . $user['nama'],
+
+    "email" => $user['email'],
+
+    "telepon" => "0812-3456-7890",
+
+    "alamat" => "Jl. Merdeka No. 12, tokyo, jepang",
+
+    "tanggal_gabung" => date(
+        "d F Y",
+        strtotime($user['created_at'])
+    ),
+
+    "total_pesanan" => 24,
+
+    "total_belanja" => 3250000,
+
+    "poin_reward" => 850,
+
+    "status_member" => "Gold Member"
 ];
+
 
 // Fungsi format Rupiah
 function formatRupiah($angka) {
     return "Rp " . number_format($angka, 0, ",", ".");
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -46,10 +144,6 @@ function formatRupiah($angka) {
 
 <style>
 
-/* =========================
-   RESET
-========================= */
-
 * {
     margin: 0;
     padding: 0;
@@ -57,29 +151,14 @@ function formatRupiah($angka) {
     font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-
-/* =========================
-   BODY
-========================= */
-
 body {
     background: #f3f4f6;
 }
-
-
-/* =========================
-   LAYOUT
-========================= */
 
 .wrapper {
     display: flex;
     min-height: 100vh;
 }
-
-
-/* =========================
-   SIDEBAR
-========================= */
 
 .sidebar {
     width: 230px;
@@ -106,11 +185,6 @@ body {
     background: #444;
 }
 
-
-/* =========================
-   LOGOUT
-========================= */
-
 .logout {
     margin: 25px 20px;
 }
@@ -129,21 +203,11 @@ body {
     background: #b02a37;
 }
 
-
-/* =========================
-   CONTENT
-========================= */
-
 .content {
     flex: 1;
     min-width: 0;
     padding: 30px;
 }
-
-
-/* =========================
-   PROFILE CONTAINER
-========================= */
 
 .profile-container {
     width: 100%;
@@ -151,22 +215,12 @@ body {
     margin: 0 auto;
 }
 
-
-/* =========================
-   PROFILE CARD
-========================= */
-
 .card {
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     overflow: hidden;
 }
-
-
-/* =========================
-   HEADER PROFILE
-========================= */
 
 .header {
     background: linear-gradient(135deg, #4f46e5, #6366f1);
@@ -205,11 +259,6 @@ body {
     border-radius: 20px;
 }
 
-
-/* =========================
-   STATS
-========================= */
-
 .stats {
     display: flex;
     justify-content: space-around;
@@ -233,11 +282,6 @@ body {
     color: #6b7280;
     margin-top: 2px;
 }
-
-
-/* =========================
-   INFORMATION
-========================= */
 
 .info {
     padding: 20px 22px;
@@ -266,11 +310,6 @@ body {
     text-align: right;
     max-width: 60%;
 }
-
-
-/* =========================
-   BUTTON
-========================= */
 
 .actions {
     display: flex;
@@ -301,10 +340,43 @@ body {
     color: #374151;
 }
 
+/* FORM EDIT */
 
-/* =========================
-   RESPONSIVE
-========================= */
+.edit-form {
+    padding: 22px;
+    background: white;
+    border-top: 1px solid #f3f4f6;
+}
+
+.edit-form h3 {
+    margin-bottom: 18px;
+}
+
+.edit-form label {
+    display: block;
+    margin-bottom: 6px;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.edit-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.edit-form input:focus {
+    outline: none;
+    border-color: #4f46e5;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 10px;
+}
 
 @media (max-width: 800px) {
 
@@ -326,32 +398,17 @@ body {
 
 </head>
 
-
 <body>
-
 
 <div class="wrapper">
 
-
-    <!-- =========================
-         SIDEBAR
-    ========================= -->
-
     <?php include 'sidebar.php'; ?>
-
-
-    <!-- =========================
-         CONTENT
-    ========================= -->
 
     <div class="content">
 
-
         <div class="profile-container">
 
-
             <div class="card">
-
 
                 <!-- HEADER PROFIL -->
 
@@ -393,7 +450,6 @@ body {
 
                     </div>
 
-
                     <div>
 
                         <div class="value">
@@ -405,7 +461,6 @@ body {
                         </div>
 
                     </div>
-
 
                     <div>
 
@@ -426,7 +481,6 @@ body {
 
                 <div class="info">
 
-
                     <div class="info-item">
 
                         <span class="label">
@@ -438,7 +492,6 @@ body {
                         </span>
 
                     </div>
-
 
                     <div class="info-item">
 
@@ -452,7 +505,6 @@ body {
 
                     </div>
 
-
                     <div class="info-item">
 
                         <span class="label">
@@ -464,7 +516,6 @@ body {
                         </span>
 
                     </div>
-
 
                     <div class="info-item">
 
@@ -478,36 +529,110 @@ body {
 
                     </div>
 
+                </div>
+
+
+                <!-- FORM EDIT -->
+
+                <?php if (isset($_GET['edit'])): ?>
+
+                <div class="edit-form">
+
+                    <h3>
+                        Edit Profil
+                    </h3>
+
+                    <form method="POST">
+
+                        <label>
+                            Nama
+                        </label>
+
+                        <input
+                            type="text"
+                            name="nama"
+                            value="<?= htmlspecialchars($user['nama']) ?>"
+                            required
+                        >
+
+                        <label>
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            name="email"
+                            value="<?= htmlspecialchars($user['email']) ?>"
+                            required
+                        >
+
+                        <label>
+                            Password Baru
+                        </label>
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Kosongkan jika tidak ingin mengubah password"
+                        >
+
+                        <div class="form-buttons">
+
+                            <button
+                                type="submit"
+                                name="simpan_profil"
+                                class="btn btn-primary"
+                            >
+                                Simpan Perubahan
+                            </button>
+
+                            <a
+                                href="profile.php"
+                                class="btn btn-secondary"
+                            >
+                                Batal
+                            </a>
+
+                        </div>
+
+                    </form>
 
                 </div>
+
+                <?php endif; ?>
 
 
                 <!-- TOMBOL -->
 
                 <div class="actions">
 
-                    <a href="#" class="btn btn-secondary">
+                    <?php if (!isset($_GET['edit'])): ?>
+
+                    <a
+                        href="profile.php?edit=1"
+                        class="btn btn-secondary"
+                    >
                         Edit Profil
                     </a>
 
-                    <a href="#" class="btn btn-primary">
+                    <?php endif; ?>
+
+                    <a
+                        href="transaksi_saya.php"
+                        class="btn btn-primary"
+                    >
                         Riwayat Pesanan
                     </a>
 
                 </div>
 
-
             </div>
-
 
         </div>
 
-
     </div>
 
-
 </div>
-
 
 </body>
 
