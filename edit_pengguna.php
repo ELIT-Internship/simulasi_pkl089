@@ -49,8 +49,12 @@ if (isset($_POST['simpan'])) {
          WHERE id = '$id'"
     );
 
+    // Jika berhasil diubah
     if ($update) {
-        header("Location: data_pengguna.php");
+        echo "<script>
+            alert('Data berhasil diubah!');
+            window.location='data_pengguna.php';
+        </script>";
         exit();
     } else {
         echo "Gagal mengubah data: " . mysqli_error($koneksi);
