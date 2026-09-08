@@ -32,8 +32,12 @@ if (isset($_POST['simpan'])) {
          VALUES ('$nama', '$email', '$passwordHash', '$role')"
     );
 
+    // Jika berhasil
     if ($query) {
-        header("Location: data_pengguna.php");
+        echo "<script>
+            alert('Data berhasil ditambahkan!');
+            window.location='data_pengguna.php';
+        </script>";
         exit();
     } else {
         echo "Gagal menambahkan pengguna: " . mysqli_error($koneksi);

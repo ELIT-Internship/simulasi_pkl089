@@ -99,7 +99,10 @@ $totalProses = $dataProses['total'] ?? 0;
         ========================= */
 
         .wrapper .sidebar {
-            .sidebar { width: 240px; min-width: 240px; min-height: 100vh; background: #222; color: white; padding: 25px 15px; flex-shrink: 0; } .sidebar h2 { text-align: center; margin: 0 0 30px; font-size: 22px; color: white; } .sidebar a { display: block; color: white; text-decoration: none; padding: 13px 15px; margin-bottom: 8px; border-radius: 6px; transition: 0.2s; font-size: 15px; } .sidebar a:hover { background: #444; }
+            width: 240px;
+            min-width: 240px;
+            min-height: 100vh;
+            flex-shrink: 0;
         }
 
         /* =========================

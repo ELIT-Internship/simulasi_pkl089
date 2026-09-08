@@ -161,8 +161,8 @@ $role = $_SESSION['role'] ?? 'user';
     <!-- LOGOUT -->
     <div class="logout">
 
-        <a href="logout.php">
-            Logout
+<a href="logout.php" onclick="return confirm('Apakah Anda yakin ingin logout?')">
+    Logout
         </a>
 
     </div>

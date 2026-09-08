@@ -36,9 +36,15 @@ $query = mysqli_query(
     "DELETE FROM users WHERE id = $id"
 );
 
+// ==============================
+// CEK HASIL HAPUS
+// ==============================
 if ($query) {
 
-    header("Location: data_pengguna.php");
+    echo "<script>
+        alert('Data berhasil dihapus!');
+        window.location='data_pengguna.php';
+    </script>";
     exit();
 
 } else {
