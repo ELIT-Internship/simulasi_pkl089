@@ -19,7 +19,7 @@ $stmt = mysqli_prepare($koneksi, $sql);
 mysqli_stmt_bind_param($stmt, "s", $email);
 mysqli_stmt_execute($stmt);
 
-$result = mysqlti_stmt_get_result($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
 if (mysqli_num_rows($result) == 1) {
 
@@ -28,11 +28,11 @@ if (mysqli_num_rows($result) == 1) {
     // cek password
     if (password_verify($password, $data['password'])) {
 
-        // membuat session login
+// membuat session login
         $_SESSION['user'] = $data['nama'];
         $_SESSION['email'] = $data['email'];
         $_SESSION['role'] = $data['role'];
-
+        
         // pindah ke dashboard
         header("Location: dashboard.php");
         exit;
